@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zkoušení anglických slovíček</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2d2d2d;
+  }
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  h1 { font-size: 1.3rem; color: #555; margin: 0 0 24px; font-weight: 600; }
+  .score {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+  }
+  .score span { display: block; font-size: 1.6rem; font-weight: 700; }
+  .correct span { color: #22a06b; }
+  .wrong span { color: #e5484d; }
+  .word {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #4c3a91;
+    margin: 16px 0 28px;
+    word-break: break-word;
+  }
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1.1rem;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: #764ba2; }
+  button {
+    margin-top: 16px;
+    width: 100%;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    background: #764ba2;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:hover { background: #5e3a82; }
+  .feedback {
+    margin-top: 22px;
+    min-height: 28px;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .feedback.ok { color: #22a06b; }
+  .feedback.no { color: #e5484d; }
+  .hint { color: #888; font-size: 0.9rem; margin-top: 6px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🇬🇧 ➜ 🇨🇿 Zkoušení slovíček</h1>
+    <div class="score">
+      <div class="correct">Správně<span id="correct">0</span></div>
+      <div class="wrong">Špatně<span id="wrong">0</span></div>
+    </div>
+    <div class="word" id="word">—</div>
+    <input id="answer" type="text" placeholder="Napiš český překlad…" autocomplete="off" autofocus>
+    <button id="submit">Zkontrolovat</button>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+<script>
+// Nejpoužívanější anglická slovíčka s českými překlady
+// (více možných překladů odděleno čárkou)
+const WORDS = {
+  "time": "čas",
+  "year": "rok",
+  "people": "lidé",
+  "way": "cesta, způsob",
+  "day": "den",
+  "man": "muž",
+  "thing": "věc",
+  "woman": "žena",
+  "life": "život",
+  "child": "dítě",
+  "world": "svět",
+  "school": "škola",
+  "state": "stát",
+  "family": "rodina",
+  "student": "student",
+  "group": "skupina",
+  "country": "země",
+  "problem": "problém",
+  "hand": "ruka",
+  "part": "část",
+  "place": "místo",
+  "case": "případ",
+  "week": "týden",
+  "company": "firma, společnost",
+  "work": "práce",
+  "number": "číslo",
+  "night": "noc",
+  "point": "bod",
+  "home": "domov",
+  "water": "voda",
+  "room": "pokoj, místnost",
+  "mother": "matka",
+  "money": "peníze",
+  "story": "příběh",
+  "month": "měsíc",
+  "book": "kniha",
+  "eye": "oko",
+  "job": "práce, zaměstnání",
+  "word": "slovo",
+  "business": "obchod, podnikání",
+  "side": "strana",
+  "kind": "druh",
+  "head": "hlava",
+  "house": "dům",
+  "friend": "přítel, kamarád",
+  "father": "otec",
+  "hour": "hodina",
+  "game": "hra",
+  "line": "čára, linka",
+  "city": "město",
+  "name": "jméno",
+  "team": "tým",
+  "minute": "minuta",
+  "idea": "nápad, myšlenka",
+  "body": "tělo",
+  "back": "záda",
+  "car": "auto",
+  "love": "láska",
+  "food": "jídlo",
+  "door": "dveře",
+  "health": "zdraví",
+  "girl": "dívka",
+  "boy": "chlapec",
+  "table": "stůl",
+  "dog": "pes",
+  "cat": "kočka",
+  "tree": "strom",
+  "sun": "slunce",
+  "moon": "měsíc",
+  "star": "hvězda",
+  "fire": "oheň",
+  "rain": "déšť",
+  "snow": "sníh",
+  "wind": "vítr",
+  "sea": "moře",
+  "river": "řeka",
+  "mountain": "hora",
+  "road": "cesta, silnice",
+  "color": "barva",
+  "music": "hudba",
+  "voice": "hlas",
+  "morning": "ráno",
+  "evening": "večer",
+  "winter": "zima",
+  "summer": "léto",
+  "spring": "jaro",
+  "autumn": "podzim",
+  "bird": "pták",
+  "fish": "ryba",
+  "horse": "kůň",
+  "flower": "květina",
+  "bread": "chléb",
+  "milk": "mléko",
+  "apple": "jablko",
+  "window": "okno",
+  "letter": "dopis, písmeno",
+  "picture": "obrázek",
+  "to go": "jít, jet",
+  "to make": "dělat, vyrobit",
+  "to know": "vědět, znát",
+  "to think": "myslet",
+  "to see": "vidět",
+  "to want": "chtít",
+  "to use": "používat",
+  "to find": "najít",
+  "to give": "dát",
+  "to tell": "říct",
+  "to ask": "ptát se",
+  "to work": "pracovat",
+  "to feel": "cítit",
+  "to try": "zkusit",
+  "to leave": "odejít, opustit",
+  "to call": "volat",
+  "to read": "číst",
+  "to write": "psát",
+  "to speak": "mluvit",
+  "to eat": "jíst",
+  "to drink": "pít",
+  "to sleep": "spát",
+  "to buy": "koupit",
+  "to learn": "učit se",
+  "to help": "pomáhat",
+  "good": "dobrý",
+  "bad": "špatný",
+  "big": "velký",
+  "small": "malý",
+  "new": "nový",
+  "old": "starý",
+  "high": "vysoký",
+  "low": "nízký",
+  "long": "dlouhý",
+  "short": "krátký",
+  "hot": "horký",
+  "cold": "studený",
+  "fast": "rychlý",
+  "slow": "pomalý",
+  "happy": "šťastný",
+  "sad": "smutný",
+  "easy": "snadný",
+  "hard": "těžký, tvrdý",
+  "beautiful": "krásný",
+  "young": "mladý"
+};
+
+const keys = Object.keys(WORDS);
+let current = null;
+let correct = 0;
+let wrong = 0;
+let answered = false; // true = právě bylo zkontrolováno, další klik/Enter = nové slovo
+
+// Váhy pro procvičování chyb: čím vyšší váha, tím častěji se slovo objevuje.
+// Špatná odpověď váhu zvýší, správná ji sníží (minimum 1).
+const weights = {};
+keys.forEach(k => weights[k] = 1);
+
+const wordEl = document.getElementById("word");
+const answerEl = document.getElementById("answer");
+const submitBtn = document.getElementById("submit");
+const feedbackEl = document.getElementById("feedback");
+const correctEl = document.getElementById("correct");
+const wrongEl = document.getElementById("wrong");
+
+function pickWord() {
+  // Vážený náhodný výběr — slova s vyšší váhou (dříve spletená) padají častěji.
+  let total = 0;
+  keys.forEach(k => total += weights[k]);
+  let r = Math.random() * total;
+  let chosen = keys[0];
+  for (const k of keys) {
+    r -= weights[k];
+    if (r <= 0) { chosen = k; break; }
+  }
+  // Vyhneme se dvakrát po sobě stejnému slovu (pokud existuje alternativa)
+  if (chosen === current && keys.length > 1) {
+    return pickWord();
+  }
+  current = chosen;
+  wordEl.textContent = current;
+  answerEl.value = "";
+  answerEl.focus();
+  answered = false;
+  submitBtn.textContent = "Zkontrolovat";
+}
+
+// Normalizace: malá písmena, bez diakritiky, bez mezer navíc
+function normalize(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function check() {
+  const userText = normalize(answerEl.value);
+  if (userText === "") { answerEl.focus(); return; }
+
+  // Správné odpovědi (může jich být víc, oddělené čárkou)
+  const accepted = WORDS[current].split(",").map(t => normalize(t));
+  // Akceptujeme i variantu bez "se" (zvratná slovesa) a s/bez prvního slova
+  const isCorrect = accepted.some(a => a === userText || a.replace(/ se$/, "") === userText);
+
+  if (isCorrect) {
+    correct++;
+    correctEl.textContent = correct;
+    feedbackEl.textContent = "✅ Správně!";
+    feedbackEl.className = "feedback ok";
+    // Správně → snížíme váhu (slovo umíme), minimum 1
+    weights[current] = Math.max(1, weights[current] - 2);
+  } else {
+    wrong++;
+    wrongEl.textContent = wrong;
+    feedbackEl.innerHTML = '❌ Špatně. Správně: <b>' + WORDS[current] + '</b>';
+    feedbackEl.className = "feedback no";
+    // Špatně → zvýšíme váhu (bude se ptát častěji), strop 10
+    weights[current] = Math.min(10, weights[current] + 4);
+  }
+  answered = true;
+  submitBtn.textContent = "Další slovo →";
+}
+
+function handleAction() {
+  if (answered) {
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+    pickWord();
+  } else {
+    check();
+  }
+}
+
+submitBtn.addEventListener("click", handleAction);
+answerEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); handleAction(); }
+});
+
+pickWord();
+</script>
+</body>
+</html>
